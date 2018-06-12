@@ -1,5 +1,6 @@
 import json
 from schema import Schema, Use, Optional
+import logging
 
 filter_schema = Schema({
     'criteria': [{
@@ -81,25 +82,28 @@ def criteria_matches(criteria: list, data: dict):
     for key in criteria[0]['target'].split('.'):
         target_val = target_val[key]
     values = criteria[0]['values']
+    negate = criteria[0]['negate']
 
     # Evaluate command
     criteria_matched = evaluate_command(command, target_val, values)
 
     # Negate ("not")
-    if criteria[0]['negate']:
+    if negate:
         criteria_matched = not criteria_matched
     
-    print('criteria_matched? ' + str(criteria_matched))
+    logging.debug('negated? %s', negate)
+    logging.debug('criteria_matched? %s', criteria_matched)
 
     # Logical Operators
     if len(criteria) == 1 or not 'logical_operator' in criteria[0]:
-        print('finished')
+        logging.debug('no more logical operators applied')
+        logging.debug('returning: %s', criteria_matched)
         return criteria_matched
     elif criteria[0]['logical_operator'] == 'and':
-        print('and')
+        logging.debug('and')
         return criteria_matched and criteria_matches(criteria[1:], data)
     elif criteria[0]['logical_operator'] == 'or':
-        print('or')
+        logging.debug('or')
         return criteria_matched or criteria_matches(criteria[1:], data)
     else:
         raise 'Unsupported logical_operator'
@@ -107,15 +111,17 @@ def criteria_matches(criteria: list, data: dict):
 
 def evaluate_command(command, target_val, values):
     if command == 'equals':
-        print('equals', target_val, values[0])
+        logging.debug('equals: [%s][%s]', target_val, values[0])
         return target_val == values[0]
     
     elif command == 'includes':
-        print('includes', target_val, values[0])
+        logging.debug('includes: [%s][%s]', target_val, values[0])
         return values[0] in target_val
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+
     filter = Filter()
 
 
@@ -144,13 +150,16 @@ if __name__ == '__main__':
             'command': 'return'
         }
     })
+    logging.info('loaded filter')
 
     # Test filter
-    print(filter.apply_filter({
+    result = filter.apply_filter({
         'id': 1,
         'timestamp': '2018-06-12T16:06:19.567000+00:00',
         'duration': 0,
         'data': {
             'incognito': 'True'
         }
-    }))
+    })
+
+    logging.info('filter result: %s', result)
