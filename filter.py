@@ -81,18 +81,11 @@ def criteria_matches(criteria: list, data: dict):
     for key in criteria[0]['target'].split('.'):
         target_val = target_val[key]
     values = criteria[0]['values']
-    criteria_matched = False
 
-    # Commands
-    if command == 'equals':
-        print('equals', target_val, values[0])
-        criteria_matched = target_val == values[0]
-    
-    elif command == 'includes':
-        print('includes', target_val, values[0])
-        criteria_matched = values[0] in target_val
+    # Evaluate command
+    criteria_matched = evaluate_command(command, target_val, values)
 
-    # Negate (not)
+    # Negate ("not")
     if criteria[0]['negate']:
         criteria_matched = not criteria_matched
     
@@ -110,6 +103,16 @@ def criteria_matches(criteria: list, data: dict):
         return criteria_matched or criteria_matches(criteria[1:], data)
     else:
         raise 'Unsupported logical_operator'
+
+
+def evaluate_command(command, target_val, values):
+    if command == 'equals':
+        print('equals', target_val, values[0])
+        return target_val == values[0]
+    
+    elif command == 'includes':
+        print('includes', target_val, values[0])
+        return values[0] in target_val
 
 
 if __name__ == '__main__':
