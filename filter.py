@@ -1,7 +1,3 @@
-"""
-
-"""
-
 import json
 from schema import Schema, Use, Optional
 
@@ -53,7 +49,17 @@ class Filter():
         """
             Applies this filter to the specified event.
         """
-        if criteria_matches(self.filter['criteria'], event):
+        if not self.filter_loaded:
+            raise 'Tried applying filter before loading filter'
+
+        event_schema.validate(event)
+        
+        data = {
+            'event': event
+            # place metadata here
+        }
+
+        if criteria_matches(self.filter['criteria'], data):
             action = self.filter['action']
             command = action['command']
             values = action['values']
@@ -66,13 +72,13 @@ class Filter():
                 raise 'Unsupported action'
 
 
-def criteria_matches(criteria, event):
+def criteria_matches(criteria: list, data: dict):
     """
-        Return True if the filter criteria matches the event
+        Return True if the filter criteria matches the data
     """
     command = criteria[0]['command']
-    target_val = event
-    for key in criteria[0]['target'].split('.')[1:]:
+    target_val = data
+    for key in criteria[0]['target'].split('.'):
         target_val = target_val[key]
     values = criteria[0]['values']
     criteria_matched = False
@@ -98,10 +104,10 @@ def criteria_matches(criteria, event):
         return criteria_matched
     elif criteria[0]['logical_operator'] == 'and':
         print('and')
-        return criteria_matched and criteria_matches(criteria[1:], event)
+        return criteria_matched and criteria_matches(criteria[1:], data)
     elif criteria[0]['logical_operator'] == 'or':
         print('or')
-        return criteria_matched or criteria_matches(criteria[1:], event)
+        return criteria_matched or criteria_matches(criteria[1:], data)
     else:
         raise 'Unsupported logical_operator'
 
@@ -132,7 +138,7 @@ if __name__ == '__main__':
             }
         ],
         "action": {
-            'command': 'remove'
+            'command': 'return'
         }
     })
 
