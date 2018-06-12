@@ -60,15 +60,23 @@ class Filter():
             # place metadata here
         }
 
-        if criteria_matches(self.filter['criteria'], data):
-            action = self.filter['action']
-            command = action['command']
-            values = action['values']
+        action = self.filter['action']
+        command = action['command']
+        values = action['values']
 
+        if criteria_matches(self.filter['criteria'], data):
             if command == 'remove':
                 return None
             elif command == 'return':
                 return event
+            else:
+                raise 'Unsupported action'
+        
+        else:
+            if command == 'remove':
+                return event
+            elif command == 'return':
+                return None
             else:
                 raise 'Unsupported action'
 
@@ -110,13 +118,28 @@ def criteria_matches(criteria: list, data: dict):
 
 
 def evaluate_command(command, target_val, values):
+    logging.debug('%s: [%s][%s]', command, target_val, values[0])
+    
     if command == 'equals':
-        logging.debug('equals: [%s][%s]', target_val, values[0])
         return target_val == values[0]
     
     elif command == 'includes':
-        logging.debug('includes: [%s][%s]', target_val, values[0])
         return values[0] in target_val
+
+    elif command == '>':
+        return target_val > values[0]
+    
+    elif command == '>=':
+        return target_val >= values[0]
+    
+    elif command == '<':
+        return target_val < values[0]
+
+    elif command == '<=':
+        return target_val <= values[0]
+
+    else:
+        raise 'Unsupported command'
 
 
 if __name__ == '__main__':
