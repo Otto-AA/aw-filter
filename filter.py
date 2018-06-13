@@ -23,6 +23,14 @@ event_schema = Schema({
     'data': dict
 })
 
+filter_commands = {
+    'equals': lambda x, y: x == y,
+    'includes': lambda x, y: y in x,
+    '>': lambda x, y: x > y,
+    '>=': lambda x, y: x >= y,
+    '<': lambda x, y: x < y,
+    '<=': lambda x, y: x <= y
+}
 
 class Filter():
     """
@@ -51,7 +59,7 @@ class Filter():
             Applies this filter to the specified event.
         """
         if not self.filter_loaded:
-            raise 'Tried applying filter before loading filter'
+            raise NameError 
 
         event_schema.validate(event)
         
@@ -70,7 +78,7 @@ class Filter():
             elif command == 'return':
                 return event
             else:
-                raise 'Unsupported action'
+                raise NameError
         
         else:
             if command == 'remove':
@@ -78,7 +86,7 @@ class Filter():
             elif command == 'return':
                 return None
             else:
-                raise 'Unsupported action'
+                raise NameError
 
 
 def criteria_matches(criteria: list, data: dict):
@@ -88,7 +96,11 @@ def criteria_matches(criteria: list, data: dict):
     command = criteria[0]['command']
     target_val = data
     for key in criteria[0]['target'].split('.'):
-        target_val = target_val[key]
+        if key in target_val:
+            target_val = target_val[key]
+        else:
+            raise NameError
+            
     values = criteria[0]['values']
     negate = criteria[0]['negate']
 
@@ -114,32 +126,16 @@ def criteria_matches(criteria: list, data: dict):
         logging.debug('or')
         return criteria_matched or criteria_matches(criteria[1:], data)
     else:
-        raise 'Unsupported logical_operator'
+        raise NameError
 
 
 def evaluate_command(command, target_val, values):
     logging.debug('%s: [%s][%s]', command, target_val, values[0])
-    
-    if command == 'equals':
-        return target_val == values[0]
-    
-    elif command == 'includes':
-        return values[0] in target_val
 
-    elif command == '>':
-        return target_val > values[0]
-    
-    elif command == '>=':
-        return target_val >= values[0]
-    
-    elif command == '<':
-        return target_val < values[0]
-
-    elif command == '<=':
-        return target_val <= values[0]
-
+    if command in filter_commands:
+        return filter_commands[command](target_val, values[0])
     else:
-        raise 'Unsupported command'
+        raise NameError
 
 
 if __name__ == '__main__':
