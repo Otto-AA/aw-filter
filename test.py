@@ -21,6 +21,14 @@ test_event = {
 
 class TestFilters(unittest.TestCase):
 
+    def test_non_existing_command(self):
+        with self.assertRaises(NameError):
+            test_criteria('non-existing-command', 'event.data.str', 'str')
+
+    def test_non_existing_target_val(self):
+        with self.assertRaises(NameError):
+            test_criteria('equals', 'non-existing-target-val', 'str')
+
     def test_equal_str(self):
         self.assertEqual(test_event, test_criteria(
             'equals', 'event.data.str', 'str'))
